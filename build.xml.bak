@@ -1,0 +1,323 @@
+<project name="EDMContentSearch" default="display-properties" basedir=".">
+	<description>
+        Compiles and builds EDMContentSearch project.
+
+        Requirements:
+        - JBoss 4.2.2 GA installed
+        - JBOSS_HOME environment variable pointing to JBoss installation directory
+
+        Generate EAR file:
+        ant ear
+    </description>
+
+	<!-- set global properties for this build -->
+	<property environment="env" />
+	<property name="jboss.home" value="${env.JBOSS_HOME}" />
+	<property file="build.properties" />
+	<property file="remotedeployment.properties" />
+
+	<!--for unit test-->
+	<property name="unittest" location="${build.dir}/server/classes" />
+	<property name="unittest-common" location="${build.dir}/common/classes" />
+	<property name="unittestsrcdir" location="${user.dir}/test" />
+	<property name="unittestsrcdir-common" location="${user.dir}/test/com/directv/edmcs/common" />
+	<property name="unittestreports" location="${user.dir}/unittestreports" />
+	<property name="full-compile" value="true" />
+	<property name="result.exec.file" location="${user.dir}/jacoco.exec" />
+	<path id="classpath.test">
+		<pathelement location="${unittest}" />
+		<pathelement location="${unittest-common}" />
+		<pathelement location="${unittestsrcdir}" />
+		<pathelement location="${unittestsrcdir-common}" />
+		<pathelement location="${user.dir}/test-resources" />
+		<pathelement location="${user.dir}/test-resources/conf" />
+		<!--All JBoss server jars-->
+		<fileset dir="${jboss.home}/lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${jboss.home}/server/default/lib">
+			<include name="**/*.jar" />
+		</fileset>
+
+		<!-- Project jars -->
+		<fileset dir="common/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="server/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="server/WebContent/search/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${build.dir}/common/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${user.dir}/server/WebContent/search/lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<!-- Junit jars -->
+		<fileset dir="${user.dir}/test-resources/lib">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+	<target name="clean" description="Delete old build">
+		<echo message="Deleting existing build" />
+		<delete dir="${user.dir}/unittestreports" />
+		<delete dir="${user.dir}/coveragereports" />
+	</target>
+
+	<target name="init-unittest" depends="clean">
+		<mkdir dir="${user.dir}/unittestreports" />
+		<mkdir dir="${user.dir}/coveragereports" />
+	</target>
+	<!-- Build classpath -->
+	<path id="project.classpath">
+		<!--All JBoss server jars-->
+		<fileset dir="${jboss.home}/lib">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${jboss.home}/server/default/lib">
+			<include name="**/*.jar" />
+		</fileset>
+
+		<!-- Project jars -->
+		<fileset dir="common/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="server/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="server/WebContent/search/lib">
+			<include name="*.jar" />
+		</fileset>
+		<fileset dir="${build.dir}/common/lib">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+	<target name="display-properties">
+		<!-- echo message="user.name = ${user.name}" /-->
+		<!-- echo message="user.home = ${user.home}" /-->
+		<echo message="java.home = ${java.home}" />
+		<echo message="jboss.home = ${jboss.home}" />
+		<echo message="ant.version = ${ant.version}" />
+		<echo message="ant.home = ${ant.home}" />
+		<echo message="ant.java.version = ${ant.java.version}" />
+		<echo message="ant.file = ${ant.file}" />
+		<echo message="ant.project.name = ${ant.project.name}" />
+		<echo message="basedir = ${basedir}" />
+		<!--echo message="class.path = ${project.classpath}" /-->
+		<!--echo message="classpath.base = ${java.class.path}" /-->
+		<echo message="build.dir = ${build.dir}" />
+		<echo message="destination.dir = ${destination.dir}" />
+		<echo message="product.version = ${product.version}" />
+	</target>
+
+	<target name="init-log" description="Initialize log file">
+		<tstamp>
+			<format property="timestamp" pattern="yyyy-MM-dd_HH-mm-ss" />
+		</tstamp>
+		<property name="build.log.filename" value="build_${timestamp}.log" />
+		<mkdir dir="${build.log.dir}" />
+		<record name="${build.log.dir}/${build.log.filename}" loglevel="verbose" append="false" />
+		<echo message="Build logged to ${basedir}/${build.log.dir}/${build.log.filename}" />
+	</target>
+
+	<target name="build-common-jar" depends="init-log, display-properties" description="Build common jar file">
+		<echo message="Building common jar..." />
+
+		<!-- Recreate build directory -->
+		<delete dir="${build.dir}/common" />
+		<mkdir dir="${build.dir}/common/classes" />
+		<mkdir dir="${build.dir}/common/lib" />
+
+		<!-- Compile common source code -->
+		<javac srcdir="common/src" destdir="${build.dir}/common/classes" debug="true">
+			<classpath refid="project.classpath" />
+		</javac>
+
+		<!-- Compile junit source code common test -->
+		<javac srcdir="${unittestsrcdir-common}" destdir="${unittest-common}" verbose="${full-compile}">
+			<classpath refid="classpath.test" />
+		</javac>
+
+		<!-- Build jar file -->
+		<jar destfile="${build.dir}/common/lib/${product.file.prefix}-common-${product.version}.jar" basedir="${build.dir}/common/classes" />
+
+		<!-- Create destination directory if doesn't exist -->
+		<mkdir dir="${destination.dir}" />
+		<!-- Delete old common jar from destination directory if it exists -->
+		<delete>
+			<fileset dir="${destination.dir}" includes="${product.file.prefix}-common-*.jar" />
+		</delete>
+		<!-- Copy new common jar to destination directory -->
+		<copy file="${build.dir}/common/lib/${product.file.prefix}-common-${product.version}.jar" todir="${destination.dir}" />
+	</target>
+
+	<target name="build-server-jar" depends="build-common-jar,init-unittest" description="Build server jar" >
+		<echo message="Building server jar..." />
+
+		<!-- Recreate build directory -->
+		<delete dir="${build.dir}/server" />
+		<mkdir dir="${build.dir}/server/classes" />
+		<mkdir dir="${build.dir}/server/lib" />
+
+		<!-- Compile server source code -->
+		<javac srcdir="server/src" destdir="${build.dir}/server/classes" debug="true">
+			<classpath refid="project.classpath" />
+		</javac>
+
+		<!-- Compile SearchServlet-->
+		<javac srcdir="server/WebContent/search/src/com/directv/edmcs/web" destdir="${build.dir}/server/classes" debug="true">
+			<classpath refid="project.classpath" />
+		</javac>
+		
+		<!-- Compile DateAdapter-->
+		<javac srcdir="schema/src/com/directv/jaxb/adapters" destdir="${build.dir}/server/classes" debug="true">
+			<classpath refid="project.classpath" />
+		</javac>
+
+		<!-- Compile junit source code test-->
+		<javac srcdir="${unittestsrcdir}" destdir="${unittest}" verbose="${full-compile}">
+			<classpath refid="classpath.test" />
+		</javac>
+
+		<!-- Create version properties file -->
+		<propertyfile file="${build.dir}/server/classes/version.properties" jdkproperties="true"
+         comment="This file is generated automatically, do not edit">
+			<entry key="productVersion" value="${product.version}"/>
+			<entry key="buildTimestamp" type="date" pattern="yyyy-MM-dd HH:mm z" value="now"/>
+			<!--entry key="builtBy" value="${user.name}"/-->
+		</propertyfile>
+
+		<!-- Build jar file -->
+		<jar destfile="${build.dir}/server/lib/${product.file.prefix}-server.jar" basedir="${build.dir}/server/classes" />
+	</target>
+
+	<target name="compile-web-src" description="Compile web source">
+		<echo message="Compiling web sources..." />
+
+		<!-- Recreate build directory -->
+		<delete dir="${build.dir}/server/WebContent/search" />
+		<mkdir dir="${build.dir}/server/WebContent/search/classes" />
+
+		<!-- Compile search source code -->
+		<javac srcdir="server/WebContent/search/src" destdir="${build.dir}/server/WebContent/search/classes" debug="true">
+			<classpath refid="project.classpath" />
+		</javac>
+	</target>
+
+	<target name="build-sar" depends="init-log, display-properties" description="Build services.sar">
+		<echo message="Building sar..." />
+		<delete>
+			<fileset dir="${build.dir}" includes="*.sar" />
+		</delete>
+		<jar destfile="${build.dir}/services.sar" basedir="server/sar" />
+	</target>
+
+	<target name="build-wars" depends="init-log, compile-web-src" description="Packages web app as WAR">
+		<echo message="Building server wars..." />
+		<!-- Search war -->
+		<war destfile="${build.dir}/${product.file.prefix}-search.war">
+			<metainf dir="server/WebContent/search/META-INF" />
+			<webinf dir="server/WebContent/search/WEB-INF" />
+			<lib dir="server/WebContent/search/lib" includes="*.jar" />
+			<classes dir="${build.dir}/server/WebContent/search/classes" />
+		</war>
+		<!-- Server Info war -->
+		<war destfile="${build.dir}/${product.file.prefix}-serverinfo.war">
+			<fileset dir="server/WebContent/serverinfo" />
+		</war>
+	</target>
+
+	<target name="ear" depends="build-common-jar, build-server-jar, build-sar, build-wars" description="Package EAR file">
+		<echo message="Building ear..." />
+		<ear destFile="${destination.dir}/${product.file.prefix}.ear" appxml="server/ear/application.xml">
+			<!-- Files to be included in / -->
+			<fileset dir="${build.dir}">
+				<include name="services.sar"/>
+				<!--
+                <include name="META-INF/jboss-app.xml" />
+                -->
+				<include name="${product.file.prefix}-*.war"/>
+			</fileset>
+			<!--
+            <fileset dir="server/sar">
+                <include name="*.sar"/>
+            </fileset>
+            -->
+			<fileset dir="server/ear">
+				<include name="META-INF/jboss-app.xml"/>
+			</fileset>
+			<fileset dir="${build.dir}/server/lib">
+				<include name="*.jar" />
+			</fileset>
+			<!-- Files to be included in /lib -->
+			<fileset dir="common">
+				<include name="lib/*.jar" />
+			</fileset>
+			<fileset dir="server">
+				<include name="lib/*.jar" />
+			</fileset>
+			<fileset dir="${build.dir}/common">
+				<include name="lib/*.jar" />
+			</fileset>
+		</ear>
+	</target>
+
+	<target name="deploy-ear" depends="ear" description="Copy ear file to remote deployment directory">
+		<scp file="${destination.dir}/${product.file.prefix}.ear" todir="${ear.remote.deployment.directory}">
+		</scp>
+	</target>
+
+	<target name="all" depends="ear" description="Build all ear and war files">
+	</target>
+
+	<taskdef uri="antlib:org.jacoco.ant" resource="org/jacoco/ant/antlib.xml">
+		<classpath path="${user.dir}/test-resources/lib/jacocoant.jar" />
+	</taskdef>
+
+	<target name="jacoco" depends="build-server-jar">
+		<jacoco:coverage xmlns:jacoco="antlib:org.jacoco.ant">
+			<junit  fork="true">
+				<formatter type="xml"/>
+				<classpath refid="classpath.test">
+				</classpath>
+				<batchtest fork="true" todir="${unittestreports}">
+					<fileset dir="${unittest}">
+						<include name="**/*Test.class"/>
+					</fileset>
+				</batchtest>
+			</junit>
+		</jacoco:coverage>
+	</target>
+
+	<target name="unittest" depends="jacoco">
+		<jacoco:report xmlns:jacoco="antlib:org.jacoco.ant">
+			<executiondata>
+				<file file="${result.exec.file}" />
+			</executiondata>
+			<structure name="EDMCS coverage reports">
+				<classfiles>
+					<fileset dir="${build.dir}/server/classes" >
+						<exclude name="**/*Test.class"/>
+					</fileset>
+					<fileset dir="${build.dir}/common/classes">
+						<exclude name="**/*Test.class" />
+					</fileset>
+				</classfiles>
+				<sourcefiles encoding="UTF-8">
+					<fileset dir="server/src"  >
+
+					</fileset>
+				</sourcefiles>
+			</structure>
+
+			<!-- to produce reports in different formats. -->
+			<html destdir="${user.dir}/coveragereports" />
+			<csv destfile="${user.dir}/coveragereports/report.csv" />
+			<xml destfile="${user.dir}/coveragereports/report.xml" />
+		</jacoco:report>
+	</target>
+</project>

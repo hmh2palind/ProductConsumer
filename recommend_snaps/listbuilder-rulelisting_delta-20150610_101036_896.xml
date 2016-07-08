@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:listbuilderConfig xmlns:ns2="urn:ListBuilder:ProgramGuide">
+    <ns2:listBuilderDeltaListing>
+        <ns2:ruleSet>
+            <ns2:rule>
+                <ruleName>ManualPosition</ruleName>
+                <collapseSeries>false</collapseSeries>
+                <suppressResult>false</suppressResult>
+                <defaultLabel>ManualPosition</defaultLabel>
+                <useEpisodeTitle>false</useEpisodeTitle>
+                <dtv>true</dtv>
+                <query>
+                    <match type="AND">
+                        <statement>
+                            <filter value2="News Breakfast" value1="title" operation="EQUAL" name="keyword"/>
+                        </statement>
+                    </match>
+                </query>
+                <manualPosition tmsId="SH006568550000" position="1"/>
+                <manualPosition tmsId="SH021608530000" position="2"/>
+                <manualPosition tmsId="SH018968480000" position="3"/>
+                <whatsHotByRegion>false</whatsHotByRegion>
+                <typeOfRule>LIST_BUILDER</typeOfRule>
+                <maxResult>0</maxResult>
+                <state>Published</state>
+                <updatedDate>06/09/2015 10:10:36</updatedDate>
+            </ns2:rule>
+        </ns2:ruleSet>
+		
+		<ns2:groupSet>
+            <ns2:group>
+				<ruleList>
+                    <ns2:groupRule>
+                        <position>1</position>
+                        <ruleName>ManualPosition</ruleName>
+                        <typeOfRule>LIST_BUILDER</typeOfRule>
+                    </ns2:groupRule>
+                </ruleList>
+                <altRuleList>
+                    <ns2:groupRule>
+                        <position>1</position>
+                        <ruleName>ManualPosition</ruleName>
+                        <typeOfRule>LIST_BUILDER</typeOfRule>
+                    </ns2:groupRule>
+                </altRuleList>
+                <name>G_ManualPosition</name>
+                <state>Published</state>
+            </ns2:group>			
+		</ns2:groupSet>
+    </ns2:listBuilderDeltaListing>
+</ns2:listbuilderConfig>
